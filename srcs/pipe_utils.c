@@ -6,7 +6,7 @@
 /*   By: razouani <razouani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/17 18:53:42 by enschnei          #+#    #+#             */
-/*   Updated: 2024/09/25 17:37:03 by razouani         ###   ########.fr       */
+/*   Updated: 2024/12/18 16:24:04 by razouani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,17 +15,16 @@
 void	free_all(t_pipex *pipex)
 {
 	if (pipex->path)
-		ft_free(pipex->path, ft_count_line_split(pipex->path));
+		return ;
+		// ft_free(pipex->path, ft_count_line_split(pipex->path));
 	// ft_free(pipex->command_1, ft_count_line_split(pipex->command_1));
 	// exit(EXIT_SUCCESS);
 }
 
-char	*find_the_path(int ac, char **av, char **ev, t_pipex *pipex)
+char	*find_the_path(char **ev, t_pipex *pipex)
 {
 	int	i;
 
-	(void)ac;
-	(void)av;
 	i = 0;
 	pipex->ligne_path = NULL;
 	while (ev[i])
@@ -95,9 +94,10 @@ char	*get_the_command(t_pipex *pipex)
 		path = search_the_path(pipex, pipex->command_1);
 		if (!path)
 		{
-			ft_putstr_fd("Command not found\n", 2);
+			ft_printf("%s a changer:", pipex->command_1);
+			ft_putstr_fd(" Command not found\n", 2);
 			free_all(pipex);
-			// exit(EXIT_FAILURE);
+			exit(EXIT_FAILURE);
 		}
 		return (path);
 	}

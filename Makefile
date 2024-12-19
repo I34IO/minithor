@@ -1,13 +1,24 @@
-
-
 NAME = minishell
 
-C_FILES = main.c \
-          pipe.c \
-          prompt.c \
-          pipe_utils.c\
+C_FILES = main.c\
+		  cd.c\
+		  pwd.c\
+		  env.c\
+          pipe.c\
+		  echo.c\
 		  token.c\
+		  free.c\
+          prompt.c\
+		  export.c\
+		  signal.c\
+		  builtin.c\
+		  heredoc.c\
+		  split_env.c\
+          pipe_utils.c\
 		  token_utils.c\
+		  check_token.c\
+		  token_utils2.c\
+		  heredoc_utils.c\
 
 BOLD = \033[1m
 RED = \033[31m
@@ -22,7 +33,7 @@ WHITE  = \033[37m
 
 SRCS = $(addprefix srcs/, $(C_FILES))
 
-CFLAGS = -Wall -Werror -Wextra -I includes/ -g
+CFLAGS = -Wall -Werror -Wextra -I includes/ -g 
 
 LIB = ft_printf/libftprintf.a libft/libft.a 
 DEPS = $(addprefix lib/, $(LIB))

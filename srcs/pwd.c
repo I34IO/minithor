@@ -1,30 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   pwd.c                                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: razouani <razouani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/04/23 12:54:39 by enschnei          #+#    #+#             */
-/*   Updated: 2024/12/16 18:26:07 by razouani         ###   ########.fr       */
+/*   Created: 2024/10/29 17:03:20 by enschnei          #+#    #+#             */
+/*   Updated: 2024/12/18 14:37:25 by razouani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-
 #include "minishell.h"
-#include <signal.h>
 
-int main(int ac, char **av, char **ev)
+int ft_pwd(t_token *token)
 {
-	(void) ac;
-	(void) av;
-	t_pipex pipex;
-	t_token *token;
-	t_minishell minishell;
-
-	token = ft_calloc(sizeof(t_token), 1);
-	pipex.ev = ev;
-	creat_the_prompt(ev, &pipex, token, &minishell);
-	return (EXIT_SUCCESS);
+    token->value = getcwd(NULL, 0);
+    if (!token->value) 
+    {
+        perror("Erreur pwd");
+        return (EXIT_FAILURE);
+    }
+    ft_printf("%s\n", token->value);
+    free(token->value);
+    return (EXIT_SUCCESS);
 }
-

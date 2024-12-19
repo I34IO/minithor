@@ -6,19 +6,11 @@
 /*   By: razouani <razouani@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/25 17:03:28 by enschnei          #+#    #+#             */
-/*   Updated: 2024/09/25 19:19:59 by razouani         ###   ########.fr       */
+/*   Updated: 2024/12/19 16:57:17 by razouani         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-// static void	free_all(t_pipex *pipex)
-// {
-// 	if (pipex->path)
-// 		ft_free(pipex->path, ft_count_line_split(pipex->path));
-// 	// ft_free(pipex->command_1, ft_count_line_split(pipex->command_1));
-// 	exit(EXIT_SUCCESS);
-// }
 
 static char	*find_the_path_for_token(t_pipex *pipex)
 {
@@ -44,10 +36,7 @@ static char	**split_the_path_for_the_token(t_pipex *pipex)
 		return (NULL);
 	pipex->path = ft_split(pipex->ligne_path + 5, ':');
 	if (!pipex->path)
-	{
-		//ft_putstr_fd("No such file or directory\n", 2);
-		// exit(EXIT_FAILURE);
-	}
+		return(NULL);
 	return (pipex->path);
 }
 
@@ -96,7 +85,7 @@ static int get_the_command_for_the_token(t_pipex *pipex)
 			free_all(pipex);
 			return (EXIT_FAILURE);
 		}
-		return (EXIT_SUCCESS);
+		return (free(path), EXIT_SUCCESS);
 	}
 	// if (access(pipex->command_1, F_OK | X_OK) == 0)
 	// 	return (pipex->command_1);
@@ -105,10 +94,8 @@ static int get_the_command_for_the_token(t_pipex *pipex)
 
 int	search_command_for_token(t_pipex *pipex, char *mot)
 {
-	char **split;
-
 	pipex->command_1 = mot;
-	split = ft_split(pipex->command_1, '0');
+	//ft_split(pipex->command_1, '0');
 	find_the_path_for_token(pipex);
 	split_the_path_for_the_token(pipex);
 	if (get_the_command_for_the_token(pipex) == 0)
