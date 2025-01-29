@@ -1,29 +1,27 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   env.c                                              :+:      :+:    :+:   */
+/*   error.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: enschnei <enschnei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/29 17:24:17 by enschnei          #+#    #+#             */
-/*   Updated: 2025/01/23 14:47:40 by enschnei         ###   ########.fr       */
+/*   Created: 2025/01/22 17:05:21 by enschnei          #+#    #+#             */
+/*   Updated: 2025/01/27 21:17:44 by enschnei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int ft_env(t_minishell *minishell)
-{
-	t_env *tmp;
-
-	tmp = minishell->env;
-	while(minishell->env->next)
-	{
-		ft_printf("%s", minishell->env->type);
-		ft_printf("%c", '=');
-		ft_printf("%s\n", minishell->env->value);
-		minishell->env = minishell->env->next;
-	}
-	minishell->env = tmp;
-	return (EXIT_SUCCESS);
-}
+// void check_permissions(char *path)
+// {
+//     struct stat st;
+        
+//     // printf("path: %s\n", path);
+//     if ((st.st_mode & 0111) == 0) 
+//     {
+//         ft_putstr_fd("minishell: ", 2);
+//         ft_putstr_fd(path, 2);
+//         ft_putstr_fd(": Permission denied\n", 2);
+//         exit(126);
+//     }
+// }

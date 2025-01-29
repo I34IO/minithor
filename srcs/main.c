@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: razouani <razouani@student.42.fr>          +#+  +:+       +#+        */
+/*   By: roane <roane@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/04/23 12:54:39 by enschnei          #+#    #+#             */
-/*   Updated: 2024/12/16 18:26:07 by razouani         ###   ########.fr       */
+/*   Updated: 2025/01/29 16:13:58 by roane            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-
 #include "minishell.h"
-#include <signal.h>
+
+int var_g = 0;
 
 int main(int ac, char **av, char **ev)
 {
@@ -27,4 +27,16 @@ int main(int ac, char **av, char **ev)
 	creat_the_prompt(ev, &pipex, token, &minishell);
 	return (EXIT_SUCCESS);
 }
+
+/*
+regarde les pipe avec les heredoc genre :
+minishell-:ls | << salut
+1: la commande ne s'excute pas avec un heredoc qu'il soit avant ou apres
+0: faut regarder la suppression du heredoc la solution doit etre la bas
+regarde les expand genre;
+minishell-:echo "$PWD"
+1:le echo affiche bien la valeur de $PWD mais je sexfault juste apres
+0:ca doit  etre un probleme au niveau des free
+regarde la premier evariable de l'env et le controle C dasn le cat
+*/
 

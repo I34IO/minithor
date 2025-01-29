@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   export.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: enschnei <enschnei@student.42.fr>          +#+  +:+       +#+        */
+/*   By: zizi <zizi@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/09 16:53:35 by razouani          #+#    #+#             */
-/*   Updated: 2024/12/18 09:49:01 by enschnei         ###   ########.fr       */
+/*   Updated: 2025/01/25 14:38:56 by zizi             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,6 @@ static void get_value_env(t_env *env, t_token *token)
 	i = 0;
 	j = 0;
 	token = token->next;
-	ft_printf("%s\n", token->value);
 	if(env->value)
 	{
 		free(env->value);
@@ -81,5 +80,6 @@ int ft_export(t_env *env, t_token *token)
 	}
 	get_value_env(env, token);
 	token->flag = 1;
+	env = tmp;
 	return (EXIT_SUCCESS);
 }

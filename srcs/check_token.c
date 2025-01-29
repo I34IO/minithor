@@ -3,14 +3,27 @@
 /*                                                        :::      ::::::::   */
 /*   check_token.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: razouani <razouani@student.42.fr>          +#+  +:+       +#+        */
+/*   By: roane <roane@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 16:41:58 by enschnei          #+#    #+#             */
-/*   Updated: 2024/12/13 22:55:57 by razouani         ###   ########.fr       */
+/*   Updated: 2025/01/29 17:33:11 by roane            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+
+
+static int ft_strlen_V2(char *str)
+{
+	int i;
+
+	i = 0;
+	while(str[i])
+		i++;
+	free(str);
+	str = NULL;
+	return(i);
+}
 
 static int  count_sign(char *value)
 {
@@ -19,6 +32,11 @@ static int  count_sign(char *value)
 
 	i = 0;
 	sign = 0;
+	//AJOUT DEBUG
+	if (value == NULL)
+		return (0);
+	//AJOUT DEBUG
+	
 	while(value[i])
 	{
 		if (value[i] == '$')
@@ -51,10 +69,13 @@ static void dup_value_expand(char *dup_value, t_token *token, t_env *env, int in
 				y++;
 		}
 		token->value[i] = dup_value[y];
+		if (!dup_value[y])
+			break;
 		i++;
 		y++;
 	}
 	token->value[i] = '\0';
+	free(dup_value);
 }
 
 static void	expand_plus(t_token *token, t_env *env, int index, char *expand)
@@ -62,16 +83,17 @@ static void	expand_plus(t_token *token, t_env *env, int index, char *expand)
 	int len;
 	char *dup_value;
 
-	len = (ft_strlen(token->value) - (ft_strlen(expand) + 1) + ft_strlen(env->value));
-	dup_value = ft_strdup(token->value);
-	while(env->next && (ft_strcmp(env->type, expand)))
+	while(env->next && (ft_strcmp(env->type, expand)))//a voir si on veut afficher la toute dernier variable
 		env = env->next;
+	len = (ft_strlen(token->value) - (ft_strlen_V2(expand) + 1) + ft_strlen(env->value));
+	dup_value = ft_strdup(token->value);
 	free(token->value);
 	token->value = ft_calloc(sizeof(char), len + 1);
 	if(token->value == NULL)
 		return;
 	dup_value_expand(dup_value, token, env, index);
 }
+
 
 static int find_on_env(t_token *token, int index, t_env *env)
 {
@@ -95,10 +117,10 @@ static int find_on_env(t_token *token, int index, t_env *env)
 	while(env->next)
 	{
 		if (ft_strcmp(sup_exp, env->type) == 0)
-			return(ft_strlen(sup_exp));
+			return(ft_strlen_V2(sup_exp));
 		env = env->next;
 	}
-	return(0);	
+	return(free(sup_exp), 0);	
 }
 
 static void get_line(t_token *token)
@@ -150,12 +172,20 @@ static void	expand_env(t_token *token, t_env *env, int *index)
 }
 
 
-static void check_file(char *file, char *chevron)
+static void check_file(char *file, char *chevron, t_token *token, t_pipex *pipex)
 {
-	if (ft_strlen(chevron) == 1)
-		open(file, O_CREAT | O_WRONLY);
+	if (ft_strcmp(chevron, ">") == 0)
+		pipex->fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	else if (ft_strcmp(chevron, "<") == 0)
+		pipex->fd = open(file, O_RDONLY, 0644);
 	else
-		open(file, O_CREAT | O_APPEND);
+		pipex->fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+	free(token->next->type);
+	token->next->type = ft_strdup("file");
+	if (pipex->fd == -1)
+    	perror("Erreur ouverture fichier");
+	// printf("🔹 Fichier %s ouvert avec succès (fd=%d)\n", file, pipex->fd);
+    	
 }
 
 static void change_le_plan(t_token *token, int index, int start)
@@ -220,17 +250,37 @@ static int juge_expand(t_token *token, int *index, t_env *env, int *nb_sign)
 	return (free(expand), change_le_plan(token, i, *index), 0);
 }
 
-void	check_token(t_token *token, t_env *env)
+
+int		check_token(t_token *token, t_env *env, t_pipex *pipex)
 {
 	int i;
+	int index_command;
 	int nb_sign;
+	t_token *tmp;
 
 	i = 0;
+	index_command = 1;
+	tmp = token;
+	if (ft_strcmp(token->type, "pipe") == 0)
+	{
+		ft_putstr_fd("bash: syntax error near unexpected token `|'\n", 2);
+		var_g = 2;
+		return (1);
+	}
 	while(token->next)
 	{
+		if (ft_strcmp(token->type, "commande") == 0)
+			token->index = index_command++;
 		nb_sign = count_sign(token->value);
 		while(token->value[i] && nb_sign > 0)
 		{	
+			if (token->value[i] == '$' && token->value[i + 1] == '?')
+			{
+				free(token->value);
+				token->value = ft_itoa(var_g);
+				i++;
+				break;
+			}
 			if(token->value[i] == '$' && juge_expand(token, &i, env, &nb_sign))
 			{
 				i++;
@@ -240,12 +290,11 @@ void	check_token(t_token *token, t_env *env)
 			if(token->value[i] != '$' && token->value[i])
 				i++;
 		}
-		if (ft_strcmp(token->type, "redirect output") == 0)
-		check_file(token->next->value, token->type);
+		if ((ft_strcmp(token->type, "redirect output") == 0) || (ft_strcmp(token->type, "redirect input") == 0))
+			check_file(token->next->value, token->value, token, pipex);
 		token = token->next;
 		i = 0;
 	}
+	token = tmp;
+	return (0);
 }
-
-
-
