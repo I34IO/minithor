@@ -6,7 +6,7 @@
 /*   By: roane <roane@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/23 17:59:59 by razouani          #+#    #+#             */
-/*   Updated: 2025/01/29 20:21:25 by roane            ###   ########.fr       */
+/*   Updated: 2025/03/19 22:09:12 by roane            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,11 @@ static void	creat_node(char *type, t_token *token, char *value,
 	if (!token->type)
 		return ;
 	token->value = ft_strdup(value);
-	//ft_printf("l'addresse de la node: %p\n", token->value);
+	if (!token->value)
+		return ;
 	token->next = ft_calloc(sizeof(t_token), 1);
+	if (!token->next)
+		return ;
 }
 
 
@@ -33,7 +36,6 @@ static int get_line(t_minishell *minishell, int *index)
 	int i;
 
 	i = *index;
-	
 	while(((minishell->buffer[i] == '<') || (minishell->buffer[i] == ' ')) && (minishell->buffer[i]))
 		i++;
 	while((minishell->buffer[i] != ' ') && (minishell->buffer[i]))
@@ -50,10 +52,11 @@ static void cas_spe(t_minishell *minishell, int *index, int flag)
 	if(flag == 1)
 	{
 		minishell->current = ft_calloc(sizeof(char), 2);
+		if (!minishell->current)
+			return ;
 		minishell->current[0] = minishell->buffer[*index];
 		minishell->current[1] = '\0';
 		*index +=1;
-		return;
 	}
 	else if (flag == 2)
 	{
@@ -65,14 +68,38 @@ static void cas_spe(t_minishell *minishell, int *index, int flag)
 			*index += 1;
 			j++;
 		}
-		return;
 	}
 }
 
-static void	grap_mot(t_minishell *minishell, int *index)
+
+static int creat_current(t_minishell *minishell, int *index, int i, int j, int y)
+{
+	int len;
+
+	len = i - *index;
+	if (len <= 0)
+		return (1);
+	minishell->current = ft_calloc(sizeof(char), len + 1);
+	if (!minishell->current)
+		return (1);
+	while (j < len && minishell->buffer[*index])
+	{
+		minishell->current[j] = minishell->buffer[*index];
+		if (minishell->buffer[*index] == 34 || minishell->buffer[*index] == 39)
+		{
+			clear_quote(minishell->buffer, minishell->current,  index, y, &j);
+			return (0);
+		}
+		*index += 1;
+		j++;
+	}
+	minishell->current[j] = '\0';
+	return (0);
+}
+
+static int	grap_mot(t_minishell *minishell, int *index)
 {
 	int	i;
-	int	len;
 	int	j;
 	int	y;
 
@@ -80,38 +107,23 @@ static void	grap_mot(t_minishell *minishell, int *index)
 	y = *index;
 	j = 0;
 	if (is_space(minishell->buffer, &i) == -1)
-		return(cas_spe(minishell, index, 2));
+		return(cas_spe(minishell, index, 2), 0);
 	else if(is_space(minishell->buffer, &i) == 0)
-		return(cas_spe(minishell, index, 1));
+		return(cas_spe(minishell, index, 1), 0);
 	while(minishell->buffer[i] && (is_space(minishell->buffer, &i) == 1) && minishell->buffer[i] != '\t')
 	{
 		if ((minishell->buffer[i] ==  39 || minishell->buffer[i] == 34) && minishell->buffer[i + 1])
 		{
 			i++;
-			while (minishell->buffer[i] && (minishell->buffer[i] !=  39 || minishell->buffer[i] != 34))
+			while (minishell->buffer[i] && (minishell->buffer[i] !=  39 && minishell->buffer[i] != 34))
 				i++;
 		}
 		else
 			i++;
 	}
-	len = i - *index;
-	if (len <= 0)
-		return ;
-	minishell->current = ft_calloc(sizeof(char), len + 1);
-	if (!minishell->current)
-		return ;
-	while (j < len && minishell->buffer[*index])
-	{
-		minishell->current[j] = minishell->buffer[*index];
-		if (minishell->buffer[*index] == 34 || minishell->buffer[*index] == 39)
-		{
-			clear_quote(minishell->buffer, minishell->current,  index, y, &j);
-			return ;
-		}
-		*index += 1;
-		j++;
-	}
-	minishell->current[j] = '\0';
+	if(creat_current(minishell, index, i, j, y) == 1)
+		return(1);
+	return (0);
 }
 
 static int	get_type(char *mot, t_token *token, t_pipex *pipex,
@@ -120,9 +132,9 @@ static int	get_type(char *mot, t_token *token, t_pipex *pipex,
 	if (mot[0] == '<')
 		if(mot[1] == '<')
 			return(creat_node("heredoc", token, mot, minishell), 0);
-	if ((ft_strcmp(mot, ">") == 0) || (ft_strcmp(mot, "<") == 0))
+	if ((ft_strcmp(mot, ">") == 0) || (ft_strcmp(mot, "<") == 0) || (ft_strcmp(mot, ">>") == 0))
 	{
-		if (ft_strcmp(mot, ">") == 0)
+		if (ft_strcmp(mot, ">") == 0 || (ft_strcmp(mot, ">>") == 0))
 			return (creat_node("redirect output", token, mot, minishell), 0);
 		else if (ft_strcmp(mot, "<") == 0)
 			return (creat_node("redirect input", token, mot, minishell), 0);
@@ -167,30 +179,15 @@ static void	get_double_cot(char *mot, t_token *token, t_pipex *pipex, int chef,
 	}
 }
 
-static void	put_in(t_token *token, t_minishell *minishell)
+static void duplicate_in(t_minishell *minishell, t_token *token)
 {
-	t_token	*tmp;
-	int		i;
-	int		len;
+	int i;
+	t_token *tmp;
 
-	if (!token || !minishell)
-        return;
-	tmp = token;
-	len = 0;
 	i = 0;
-	while (tmp && token->next != NULL)
-	{
-		token = token->next;
-		len++;
-	}
-	token = tmp;
-	minishell->command_exac = ft_calloc(sizeof(char *), len + 1);
-	if (!minishell->command_exac)
-		return ;
+	tmp = token;
 	while (token->next != NULL)
 	{
-		// minishell->command_exac[i] = ft_calloc(sizeof(char),
-		// 		ft_strlen(token->value) + 1);
 		minishell->command_exac[i] = ft_strdup(token->value);
 		if (!minishell->command_exac[i])
 		{
@@ -207,44 +204,69 @@ static void	put_in(t_token *token, t_minishell *minishell)
 	token = tmp;
 }
 
-int	tokenisation(t_token *token, t_minishell *minishell, t_pipex *pipex)
+static void	put_in(t_token *token, t_minishell *minishell)
 {
-	int		i;
 	t_token	*tmp;
-	minishell->flag = 0;
+	int		len;
 
-	pipex->path = pipex->ev;
+	if (!token || !minishell)
+        return;
+	tmp = token;
+	len = 0;
+	while (tmp && token->next != NULL)
+	{
+		token = token->next;
+		len++;
+	}
+	token = tmp;
+	minishell->command_exac = ft_calloc(sizeof(char *), len + 1);
+	if (!minishell->command_exac)
+		return ;
+	duplicate_in(minishell, token);
+}
+
+static int creat_lst(t_token *token, t_minishell *minishell, t_pipex *pipex)
+{
+	int i;
+	t_token *tmp;
+
 	i = 0;
 	tmp = token;
-
-	// AJOUT DEBUG
-    if (minishell->buffer == NULL || minishell->buffer[0] == '\0')
-    {
-        ft_putstr_fd("Input is empty\n", 2);
-        return (EXIT_FAILURE);
-    }
-	// AJOUT DEBUG
-
 	while (minishell->buffer[i])
 	{
 		while((minishell->buffer[i] == ' ' || minishell->buffer[i] == '\t') && (minishell->buffer[i]))
 			i++;
-		grap_mot(minishell, &i);
+		if (grap_mot(minishell, &i) == 1)
+			return(0);
 		if (count_quote(minishell->current) != 0)
 			get_double_cot(minishell->current, token, pipex,
 				count_quote(minishell->current), minishell);
 		else
 			get_type(minishell->current, token, pipex, minishell);
-		//ft_printf("le type: %s. de la valeur de: %s\n", token->type, token->value);
 		token = token->next;
 		while (minishell->buffer[i] == ' ')
 			i++;
 		free(minishell->current);
 	}
 	token = tmp;
+	return (1);
+}
+
+int	tokenisation(t_token *token, t_minishell *minishell, t_pipex *pipex)
+{
+	minishell->flag = 0;
+	pipex->path = pipex->ev;
+
+    if (minishell->buffer == NULL || minishell->buffer[0] == '\0')
+    {
+        ft_putstr_fd("Input is empty\n", 2);
+        return (0);
+    }
+	if (creat_lst(token, minishell, pipex) == 0)
+		return (0);
 	put_in(token, minishell);
 	minishell->flag = 0;
-	return (EXIT_SUCCESS);
+	return (1);
 }
 
 

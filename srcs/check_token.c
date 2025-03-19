@@ -6,7 +6,7 @@
 /*   By: roane <roane@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 16:41:58 by enschnei          #+#    #+#             */
-/*   Updated: 2025/01/29 17:33:11 by roane            ###   ########.fr       */
+/*   Updated: 2025/03/19 23:25:06 by roane            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,11 +32,8 @@ static int  count_sign(char *value)
 
 	i = 0;
 	sign = 0;
-	//AJOUT DEBUG
 	if (value == NULL)
-		return (0);
-	//AJOUT DEBUG
-	
+		return (0);	
 	while(value[i])
 	{
 		if (value[i] == '$')
@@ -44,6 +41,16 @@ static int  count_sign(char *value)
 		i++;
 	}
 	return (sign);
+}
+
+static void ajust_value(t_env *env, t_token *token, int *i, int *j)
+{
+	while(env->value[*j])
+	{
+		token->value[*i] = env->value[*j];
+		*i = *i + 1;
+		*j = *j + 1;
+	}
 }
 
 static void dup_value_expand(char *dup_value, t_token *token, t_env *env, int index)
@@ -59,12 +66,7 @@ static void dup_value_expand(char *dup_value, t_token *token, t_env *env, int in
 	{
 		if (dup_value[y] == '$')
 		{
-			while(env->value[j])
-			{
-				token->value[i] = env->value[j];
-				i++;
-				j++;
-			}
+			ajust_value(env, token, &i, &j);
 			while(y < index)
 				y++;
 		}
@@ -182,13 +184,28 @@ static void check_file(char *file, char *chevron, t_token *token, t_pipex *pipex
 		pipex->fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	free(token->next->type);
 	token->next->type = ft_strdup("file");
+	if (!token->next->type)
+		return ;
 	if (pipex->fd == -1)
-    	perror("Erreur ouverture fichier");
-	// printf("🔹 Fichier %s ouvert avec succès (fd=%d)\n", file, pipex->fd);
-    	
+	{
+		ft_putstr_fd("bash: syntax error near unexpected token `newline'\n	", 2);
+		g_var = 2;
+		return ;
+	}	
 }
 
-static void change_le_plan(t_token *token, int index, int start)
+static void duplicate_value(t_token *token, int index, int j, char *dup_value)
+{
+	while(dup_value[index])
+	{
+		token->value[j] = dup_value[index];
+		index++;
+		j++;
+	}
+	token->value[j] = '\0';
+}
+
+static void swap_plan(t_token *token, int index, int start)
 {
 	int i;
 	int len;
@@ -199,21 +216,19 @@ static void change_le_plan(t_token *token, int index, int start)
 	j = 0; 
 	len = start;
 	dup_value = ft_strdup(token->value);
+	if (!dup_value)
+		return ;
 	len = (ft_strlen(token->value) - i);
 	free(token->value);
 	token->value = ft_calloc(sizeof(char), len + 1);
+	if (!token->value)
+		return ;
 	while(j < start)
 	{
 		token->value[j] = dup_value[j];
 		j++;
 	}
-	while(dup_value[index])
-	{
-		token->value[j] = dup_value[index];
-		index++;
-		j++;
-	}
-	token->value[j] = '\0';
+	duplicate_value(token, index, j, dup_value);
 	free(dup_value);
 }
 
@@ -232,6 +247,8 @@ static int juge_expand(t_token *token, int *index, t_env *env, int *nb_sign)
 	if (i == *index + 1)
 		return (0);
 	expand = ft_calloc(sizeof(char), i + 1);
+	if (!expand)
+		return (EXIT_FAILURE);
 	i = *index + 1;
 	while(token->value[i] && (token->value[i] != ' ' && token->value[i] != '$'))
 	{
@@ -247,54 +264,57 @@ static int juge_expand(t_token *token, int *index, t_env *env, int *nb_sign)
 	}
 	*nb_sign = *nb_sign - 1;
 	env = tmp;
-	return (free(expand), change_le_plan(token, i, *index), 0);
+	return (free(expand), swap_plan(token, i, *index), 0);
 }
 
+static void check_dollar(t_token *token, t_env *env)
+{
+	int i;
+	int nb_sign;
+
+	i = 0;
+	nb_sign = count_sign(token->value);
+	while(token->value[i] && nb_sign > 0 && ft_strlen(token->value) > 1)
+	{	
+		if (token->value[i] == '$' && token->value[i + 1] == '?')
+		{
+			free(token->value);
+			token->value = ft_itoa(g_var);
+			i++;
+			break;
+		}
+		if(token->value[i] == '$' && juge_expand(token, &i, env, &nb_sign))
+		{
+			i++;
+			expand_env(token, env, &i);
+			nb_sign--;
+		}
+		if(token->value[i] != '$' && token->value[i])
+			i++;
+	}
+}
 
 int		check_token(t_token *token, t_env *env, t_pipex *pipex)
 {
-	int i;
+	t_token *check;
 	int index_command;
-	int nb_sign;
 	t_token *tmp;
 
-	i = 0;
 	index_command = 1;
 	tmp = token;
-	if (ft_strcmp(token->type, "pipe") == 0)
-	{
-		ft_putstr_fd("bash: syntax error near unexpected token `|'\n", 2);
-		var_g = 2;
-		return (1);
-	}
 	while(token->next)
 	{
 		if (ft_strcmp(token->type, "commande") == 0)
 			token->index = index_command++;
-		nb_sign = count_sign(token->value);
-		while(token->value[i] && nb_sign > 0)
-		{	
-			if (token->value[i] == '$' && token->value[i + 1] == '?')
-			{
-				free(token->value);
-				token->value = ft_itoa(var_g);
-				i++;
-				break;
-			}
-			if(token->value[i] == '$' && juge_expand(token, &i, env, &nb_sign))
-			{
-				i++;
-				expand_env(token, env, &i);
-				nb_sign--;
-			}
-			if(token->value[i] != '$' && token->value[i])
-				i++;
-		}
-		if ((ft_strcmp(token->type, "redirect output") == 0) || (ft_strcmp(token->type, "redirect input") == 0))
+		check_dollar(token, env);
+		if (((ft_strcmp(token->type, "redirect output") == 0) || (ft_strcmp(token->type, "redirect input") == 0)) && (token->next->type))
 			check_file(token->next->value, token->value, token, pipex);
+		check = token;
 		token = token->next;
-		i = 0;
 	}
-	token = tmp;
-	return (0);
+	if (ft_strcmp(check->type, "pipe") == 0)
+		return(token = tmp, 1);
+	if (ft_strcmp(check->type, "redirect output") == 0 || ft_strcmp(check->type, "redirect input") == 0)
+		return(ft_printf("syntax error near unexpected token `newline'\n"), 1);
+	 return (token=tmp, 0);
 }

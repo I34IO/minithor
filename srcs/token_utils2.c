@@ -6,7 +6,7 @@
 /*   By: roane <roane@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/18 09:59:42 by enschnei          #+#    #+#             */
-/*   Updated: 2025/01/29 20:21:19 by roane            ###   ########.fr       */
+/*   Updated: 2025/03/19 17:34:54 by roane            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,11 @@ int	is_space(char *str, int *index)
 		return(0);
 	}
 	else if (str[i] == '>')
-		return (0);
+	{
+		if (str[i + 1] == '>')
+			return (-1);
+		return(0);
+	}
 	return (1);
 }
 
@@ -44,6 +48,8 @@ int	count_quote(char *mot)
 	i = 0;
 	c = 0;
 	chef = 0;
+	if (!mot)
+		return(0);
 	while (mot[i])
 	{
 		if ((mot[i] == '"' || mot[i] == '\'') && (c == 0))
@@ -80,6 +86,22 @@ char	*in_quote(char *mot, int quote)
 	return (clear_word);
 }
 
+static void not_the_same(int *index, int *index_dest, char *buffer, char *dest)
+{
+	while ((buffer[*index] != 34 || buffer[*index] != 39) && (buffer[*index]))
+		{
+			if(buffer[*index] == 34 || buffer[*index] == 39)
+				*index += 1;
+			else 
+			{
+				dest[*index_dest] = buffer[*index];
+				*index += 1;
+				*index_dest += 1;
+			}
+		}
+		buffer[*index] = '\0';
+}
+
 void	clear_quote(char *buffer, char *dest, int *index, int start,
 		int *index_dest)
 {
@@ -100,20 +122,7 @@ void	clear_quote(char *buffer, char *dest, int *index, int start,
 		dest[i] = '\0';
 	}
 	else
-	{
-		while ((buffer[*index] != 34 || buffer[*index] != 39) && (buffer[*index]))
-		{
-			if(buffer[*index] == 34 || buffer[*index] == 39)
-				*index += 1;
-			else 
-			{
-				dest[*index_dest] = buffer[*index];
-				*index += 1;
-				*index_dest += 1;
-			}
-		}
-		buffer[*index] = '\0';
-	}
+		not_the_same(index, index_dest, buffer, dest);
 	return ;
 }
 

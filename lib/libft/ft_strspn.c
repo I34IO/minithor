@@ -1,30 +1,27 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   pwd.c                                              :+:      :+:    :+:   */
+/*   ft_strspn.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: enschnei <enschnei@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/29 17:03:20 by enschnei          #+#    #+#             */
-/*   Updated: 2025/01/30 18:17:44 by enschnei         ###   ########.fr       */
+/*   Created: 2025/02/03 17:58:46 by enschnei          #+#    #+#             */
+/*   Updated: 2025/02/03 18:42:26 by enschnei         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "libft.h"
 
-int	ft_pwd(t_token *token)
+size_t	ft_strspn(const char *s, const char *accept)
 {
-	char	*tmp;
+	int i;
 
-	tmp = token->value;
-	token->value = getcwd(NULL, 0);
-	if (!token->value)
-	{
-		perror("Erreur pwd");
-		return (EXIT_FAILURE);
+    i = 0;
+	while (s[i]) 
+    {
+		if (ft_strchr(accept, s[i]) == 0)	
+            break;
+        i++;
 	}
-	ft_putstr_fd(token->value, STDIN_FILENO);
-	ft_putstr_fd("\n", STDIN_FILENO);
-	free(tmp);
-	return (EXIT_SUCCESS);
+	return (i);
 }

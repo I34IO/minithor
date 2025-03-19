@@ -3,23 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   pipe_utils.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: enschnei <enschnei@student.42.fr>          +#+  +:+       +#+        */
+/*   By: roane <roane@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/17 18:53:42 by enschnei          #+#    #+#             */
-/*   Updated: 2025/01/23 13:30:19 by enschnei         ###   ########.fr       */
+/*   Updated: 2025/03/19 22:11:21 by roane            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-void	free_all(t_pipex *pipex)
-{
-	if (pipex->path)
-		return ;
-		// ft_free(pipex->path, ft_count_line_split(pipex->path));
-	// ft_free(pipex->command_1, ft_count_line_split(pipex->command_1));
-	// exit(EXIT_SUCCESS);
-}
 
 char	*find_the_path(char **ev, t_pipex *pipex)
 {
@@ -36,6 +28,8 @@ char	*find_the_path(char **ev, t_pipex *pipex)
 		}
 		i++;
 	}
+	if (access(pipex->command_1, F_OK | X_OK) == 0)
+		check_permissions(pipex->command_1);
 	return (pipex->ligne_path);
 }
 
@@ -47,8 +41,6 @@ char	**split_the_path(t_pipex *pipex)
 	if (!pipex->path)
 	{
 		ft_putstr_fd("3 No such file or directory\n", 2);
-		// ft_free(pipex->command_1, ft_count_line_split(pipex->command_1));
-		// exit(EXIT_FAILURE);
 	}
 	return (pipex->path);
 }
@@ -86,7 +78,6 @@ char	*get_the_command(t_pipex *pipex)
 	if (!pipex->command_1)
 	{
 		ft_putstr_fd("Malloc error\n", 2);
-		free_all(pipex);
 		exit(EXIT_FAILURE);
 	}
 	if (!ft_strchr(pipex->command_1, '/') && pipex->command_1[0] != '.')
@@ -94,13 +85,14 @@ char	*get_the_command(t_pipex *pipex)
 		path = search_the_path(pipex, pipex->command_1);
 		if (!path)
 		{
-			ft_printf("bash: %s: ", pipex->command_1);
-			ft_putstr_fd("command not found\n", 2);
+			ft_putstr_fd("bash: ", 2);
+			ft_putstr_fd(pipex->command_1, 2);
+			ft_putstr_fd(": command not found\n", 2);
 			return (NULL);
 		}
 		return (path);
 	}
-	if (access(pipex->command_1, F_OK | X_OK) == 0)
+	if (access(pipex->command_1, F_OK | X_OK) != 0)
 		return (pipex->command_1);
 	return (NULL);
 }
